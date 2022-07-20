@@ -358,6 +358,7 @@ version = "0.1.0"
 dependencies = [
  "hyper",
  "hyper-rustls",
+ "lazy_static",
  "ron",
  "serde",
  "serde_json",
