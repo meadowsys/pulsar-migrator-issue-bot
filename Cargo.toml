@@ -1,0 +1,28 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name = "pulsar-migrator-issue-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies.hyper]
+version = "0.14.20"
+features = ["full"]
+
+[dependencies.hyper-rustls]
+version = "0.23.0"
+features = ["http2"]
+
+[dependencies.ron]
+version = "0.7.1"
+
+[dependencies.serde]
+version = "1.0.139"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.82"
+
+[dependencies.tokio]
+version = "1.20.0"
+features = ["full"]
