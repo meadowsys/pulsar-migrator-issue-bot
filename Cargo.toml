@@ -3,6 +3,8 @@
 [package]
 name = "pulsar-migrator-issue-bot"
 version = "0.1.0"
+publish = false
+rust-version = "1.62.0"
 edition = "2021"
 
 [dependencies.hyper]
@@ -29,3 +31,15 @@ version = "1.0.82"
 [dependencies.tokio]
 version = "1.20.0"
 features = ["full"]
+
+[profile.dev]
+opt-level = 0 # none
+debug-assertions = true
+debug = true
+incremental = true
+
+[profile.release]
+opt-level = 3 # all
+debug-assertions = false
+lto = true
+codegen-units = 1
