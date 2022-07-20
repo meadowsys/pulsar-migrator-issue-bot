@@ -10,7 +10,7 @@ async fn main() -> Result {
 
 	let request = Request::builder()
 		.uri("https://api.github.com/zen")
-		.header("user-agent", "pulsar-migrator-issue-bot (https://github.com/autumnblazey/pulsar-migrator-issue-bot)")
+		.header("user-agent", "autumnblazey/pulsar-migrator-issue-bot")
 		.method(Method::GET)
 		.body(Body::empty())?;
 
