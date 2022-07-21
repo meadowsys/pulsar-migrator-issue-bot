@@ -7,6 +7,9 @@ publish = false
 rust-version = "1.62.0"
 edition = "2021"
 
+[dependencies.dotenvy]
+version = "0.15.1"
+
 [dependencies.hyper]
 version = "0.14.20"
 features = ["full"]
