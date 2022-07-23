@@ -24,7 +24,6 @@ struct DatabaseThingMeta {
 
 #[derive(Clone, Deserialize, Serialize)]
 struct DatabaseThingData {
-	pub last_updated: SystemTime,
 	pub packages: Vec<PackageState>
 }
 
@@ -60,7 +59,6 @@ impl DatabaseThing {
 				.map_err(|e| format!("error parsing ron in file {filename}: {e}"))?
 		} else {
 			let data = DatabaseThingData {
-				last_updated: SystemTime::now(),
 				packages: vec![]
 			};
 			// let ser_data = ron::to_string(&data)?;
@@ -130,7 +128,6 @@ impl DatabaseThing {
 
 			let now = SystemTime::now();
 			inner.meta.last_write_call_time = now;
-			inner.data.last_updated = now;
 
 			let data = ron::ser::to_string_pretty(&inner.data, DatabaseThing::pretty_config())?;
 			let filename = inner.meta.filename.clone();
