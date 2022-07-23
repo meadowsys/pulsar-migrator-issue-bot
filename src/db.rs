@@ -167,6 +167,8 @@ impl Drop for DatabaseThing {
 			"db stats:\n   total packages: {}",
 			inner.data.packages.len()
 		);
+		// otherwise we deadlock on the call to `self.write_to_file_immediately();`
+		drop(inner);
 
 		self.write_to_file_immediately();
 	}
