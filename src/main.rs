@@ -19,17 +19,17 @@ mod http;
 
 use cli::Cli;
 use db::DatabaseThing;
-use http::get_http_client;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[tokio::main]
 async fn main() -> Result {
-	let db_filename = "state.ron";
-	// let token = var("GITHUB_TOKEN")
-	// 	.map_err(|e| format!("error in fetching GITHUB_TOKEN: {}", e))?;
-
 	let _ = dotenv();
+
+	let db_filename = "state.ron";
+	let token = var("GITHUB_TOKEN")
+		.map_err(|e| format!("error in fetching GITHUB_TOKEN: {}", e))?;
+
 	let cli = Cli::parse();
 	let db = DatabaseThing::new("state.ron").await?;
 
