@@ -1,0 +1,9 @@
+{
+	"name": "sample-package",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/autumnblazey/pulsar-migrator-issue-bot"
+	},
+	"downloads": 2,
+	"stargazers_count": 2
+}
