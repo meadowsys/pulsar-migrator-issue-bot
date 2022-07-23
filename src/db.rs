@@ -4,6 +4,7 @@ use serde::{ Deserialize, Serialize };
 use std::fs as sync_fs;
 use std::path;
 use std::sync::{ Arc, Mutex, MutexGuard };
+use std::thread::panicking;
 use std::time::SystemTime;
 use tokio::fs as async_fs;
 
@@ -24,6 +25,7 @@ struct DatabaseThingMeta {
 
 #[derive(Clone, Deserialize, Serialize)]
 struct DatabaseThingData {
+	pub saved_on_panic: bool,
 	pub packages: Vec<PackageState>
 }
 
@@ -59,7 +61,8 @@ impl DatabaseThing {
 				.map_err(|e| format!("error parsing ron in file {filename}: {e}"))?
 		} else {
 			let data = DatabaseThingData {
-				packages: vec![]
+				saved_on_panic: false,
+				packages: Vec::new()
 			};
 			// let ser_data = ron::to_string(&data)?;
 			let ser_data = ron::ser::to_string_pretty(&data, Self::pretty_config())?;
@@ -160,11 +163,17 @@ impl DatabaseThing {
 
 impl Drop for DatabaseThing {
 	fn drop(&mut self) {
-		let inner = self.lock_inner();
+		let mut inner = self.lock_inner();
+
+		let panicking = panicking();
+		inner.data.saved_on_panic = panicking;
+		if panicking { println!("db dropped because of panick!") }
+
 		println!(
 			"db stats:\n   total packages: {}",
 			inner.data.packages.len()
 		);
+
 		// without this we deadlock on the next call to `self.write_to_file_immediately();`
 		drop(inner);
 
