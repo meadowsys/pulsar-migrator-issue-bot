@@ -1,3 +1,5 @@
+//! hyper http client
+
 use hyper::{ Client, client::HttpConnector };
 use hyper_rustls::{ HttpsConnector, HttpsConnectorBuilder };
 

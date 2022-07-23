@@ -1,3 +1,5 @@
+//! cheapo database-ish sort of file to store state
+
 use serde::{ Deserialize, Serialize };
 use std::fs as sync_fs;
 use std::path;
@@ -5,7 +7,6 @@ use std::sync::{ Arc, Mutex, MutexGuard };
 use std::time::SystemTime;
 use tokio::fs as async_fs;
 
-/// cheapo database-ish sort of file to store state
 #[derive(Clone)]
 pub struct DatabaseThing {
 	inner: Arc<Mutex<DatabaseThingInner>>
@@ -167,7 +168,7 @@ impl Drop for DatabaseThing {
 			"db stats:\n   total packages: {}",
 			inner.data.packages.len()
 		);
-		// otherwise we deadlock on the call to `self.write_to_file_immediately();`
+		// without this we deadlock on the next call to `self.write_to_file_immediately();`
 		drop(inner);
 
 		self.write_to_file_immediately();
