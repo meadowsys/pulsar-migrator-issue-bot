@@ -4,7 +4,6 @@ use std::path;
 use std::sync::{ Arc, Mutex, MutexGuard };
 use std::time::SystemTime;
 use tokio::fs as async_fs;
-use tokio::spawn;
 
 /// cheapo database-ish sort of file to store state
 #[derive(Clone)]
@@ -19,17 +18,36 @@ struct DatabaseThingInner {
 
 struct DatabaseThingMeta {
 	pub filename: String,
-	pub last_write_call_time: SystemTime,
-	pub debounce_time: u64
+	pub last_write_call_time: SystemTime
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 struct DatabaseThingData {
-	last_updated: SystemTime
+	pub last_updated: SystemTime,
+	pub packages: Vec<PackageState>
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+enum PackageState {
+	New(NewPackage)
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct NewPackage {
+	pub name: String,
+	pub repository: PackageRepository,
+	pub downloads: u32,
+	pub stargazers_count: u32
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct PackageRepository {
+	pub r#type: String,
+	pub url: String
 }
 
 impl DatabaseThing {
-	pub async fn new(filename: &str, debounce_time: u64) -> crate::Result<Self> {
+	pub async fn new(filename: &str) -> crate::Result<Self> {
 		let data = if path::Path::new(filename).exists() {
 			let data = async_fs::read(filename).await
 				.map_err(|e| format!("error reading file {filename}: {e}"))?;
@@ -41,7 +59,8 @@ impl DatabaseThing {
 				.map_err(|e| format!("error parsing ron in file {filename}: {e}"))?
 		} else {
 			let data = DatabaseThingData {
-				last_updated: SystemTime::now()
+				last_updated: SystemTime::now(),
+				packages: vec![]
 			};
 			// let ser_data = ron::to_string(&data)?;
 			let ser_data = ron::ser::to_string_pretty(&data, Self::pretty_config())?;
@@ -53,8 +72,7 @@ impl DatabaseThing {
 			inner: Arc::new(Mutex::new(DatabaseThingInner {
 				meta: DatabaseThingMeta {
 					filename: filename.into(),
-					last_write_call_time: SystemTime::now(),
-					debounce_time
+					last_write_call_time: SystemTime::now()
 				},
 				data
 			}))
@@ -63,38 +81,56 @@ impl DatabaseThing {
 		Ok(new)
 	}
 
-	/// async because then we have to `await` it, which means it has to be called  within
-	/// a runtime, which is likely tokio because we don't have any other dependencies that
-	/// provide other types of runtimes,then we can safely call `tokio::spawn`
-	async fn write_to_file(&self) {
-		let cloned = self.clone();
-		spawn(async move {
-			let _ = write_to_file_inner(cloned).await;
-		});
+	pub fn add_package(&self, package: &NewPackage) -> bool {
+		if self.package_exists(&package.name) { return false }
 
-		async fn write_to_file_inner(db: DatabaseThing) -> crate::Result {
-			#[inline]
-			fn get_vals(db: &DatabaseThing) -> (SystemTime, u64) {
-				let mut inner = db.lock_inner();
-				let last_write_call_time = inner.meta.last_write_call_time;
-				let debounce_time = inner.meta.debounce_time;
-				inner.meta.last_write_call_time = SystemTime::now();
-				(last_write_call_time, debounce_time)
-			}
+		let mut inner = self.lock_inner();
+		inner.data.packages.push(PackageState::New(package.clone()));
 
-			let (last_write_call_time, debounce_time) = get_vals(&db);
-			if last_write_call_time.elapsed()?.as_secs() < debounce_time { return Ok(()) }
-
-			db.write_to_file_immediately();
-			Ok(())
-		}
+		true
 	}
+
+	pub fn package_exists(&self, package_name: &str) -> bool {
+		let inner = self.lock_inner();
+
+		for package in inner.data.packages.iter() {
+			let res = match package {
+				PackageState::New(NewPackage { name, .. }) => { name == package_name }
+			};
+			if res { return true }
+		}
+
+		false
+	}
+
+	// async fn write_to_file(&self) {
+	// 	let _ = write_to_file_inner(self).await;
+
+	// 	async fn write_to_file_inner(db: &DatabaseThing) -> crate::Result {
+	// 		#[inline]
+	// 		fn get_vals(db: &DatabaseThing) -> (SystemTime, u64) {
+	// 			let inner = db.lock_inner();
+	// 			let last_write_call_time = inner.meta.last_write_call_time;
+	// 			let throttle_time = inner.meta.throttle_time;
+	// 			(last_write_call_time, throttle_time)
+	// 		}
+
+	// 		let (last_write_call_time, throttle_time) = get_vals(db);
+	// 		if last_write_call_time.elapsed()?.as_secs() > throttle_time { return Ok(()) }
+
+	// 		db.write_to_file_immediately();
+	// 		Ok(())
+	// 	}
+	// }
 
 	fn write_to_file_immediately(&self) {
 		fn write_to_file_immediately_inner(db: &DatabaseThing) -> crate::Result {
 			let mut inner = db.lock_inner();
 
-			inner.data.last_updated = SystemTime::now();
+			let now = SystemTime::now();
+			inner.meta.last_write_call_time = now;
+			inner.data.last_updated = now;
+
 			let data = ron::ser::to_string_pretty(&inner.data, DatabaseThing::pretty_config())?;
 			let filename = inner.meta.filename.clone();
 			drop(inner);
@@ -105,7 +141,7 @@ impl DatabaseThing {
 
 		let res = write_to_file_immediately_inner(self);
 		if let Err(e) = res {
-			eprintln!("error when writing database file: {e}");
+			println!("error when writing database file: {e}");
 		}
 	}
 
@@ -126,6 +162,12 @@ impl DatabaseThing {
 
 impl Drop for DatabaseThing {
 	fn drop(&mut self) {
+		let inner = self.lock_inner();
+		println!(
+			"db stats:\n   total packages: {}",
+			inner.data.packages.len()
+		);
+
 		self.write_to_file_immediately();
 	}
 }
