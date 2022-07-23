@@ -83,16 +83,14 @@ impl DatabaseThing {
 		Ok(new)
 	}
 
-	pub fn add_package(&self, package: &NewPackage) -> bool {
-		if self.package_exists(&package.name) { return false }
-
+	pub fn add_package(&self, package: &NewPackage) -> Result<(), String> {
 		let mut inner = self.lock_inner();
 		inner.data.packages.push(PackageState::New(package.clone()));
 
-		true
+		Ok(())
 	}
 
-	pub fn package_exists(&self, package_name: &str) -> bool {
+	pub fn contains_package(&self, package_name: &str) -> bool {
 		let inner = self.lock_inner();
 
 		for package in inner.data.packages.iter() {
@@ -104,26 +102,6 @@ impl DatabaseThing {
 
 		false
 	}
-
-	// async fn write_to_file(&self) {
-	// 	let _ = write_to_file_inner(self).await;
-
-	// 	async fn write_to_file_inner(db: &DatabaseThing) -> crate::Result {
-	// 		#[inline]
-	// 		fn get_vals(db: &DatabaseThing) -> (SystemTime, u64) {
-	// 			let inner = db.lock_inner();
-	// 			let last_write_call_time = inner.meta.last_write_call_time;
-	// 			let throttle_time = inner.meta.throttle_time;
-	// 			(last_write_call_time, throttle_time)
-	// 		}
-
-	// 		let (last_write_call_time, throttle_time) = get_vals(db);
-	// 		if last_write_call_time.elapsed()?.as_secs() > throttle_time { return Ok(()) }
-
-	// 		db.write_to_file_immediately();
-	// 		Ok(())
-	// 	}
-	// }
 
 	fn write_to_file_immediately(&self) {
 		fn write_to_file_immediately_inner(db: &DatabaseThing) -> crate::Result {

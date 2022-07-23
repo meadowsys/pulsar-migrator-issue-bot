@@ -18,6 +18,6 @@ lazy_static! {
 }
 
 #[inline]
-pub fn get_http_client() -> Client<HttpsConnector<HttpConnector>, hyper::Body> {
+fn get_http_client() -> Client<HttpsConnector<HttpConnector>, hyper::Body> {
 	CLIENT.clone()
 }

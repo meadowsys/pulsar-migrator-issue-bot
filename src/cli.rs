@@ -48,18 +48,33 @@ pub async fn read_package_data(db: DatabaseThing, files: Vec<String>) -> Result 
 				let package = serde_json::from_str::<db::NewPackage>(&file_str);
 				match package {
 					Ok(package) => {
-						// if package.repository.r#type != "git" {
-						// 	println!(
-						// 		"package {} was not added, repository is not a github repository, so cannot file issue",
-						// 		package.name
-						// 	);
-						// 	continue
-						// }
+						if db.contains_package(&package.name) {
+							println!("package {} was not added: package with same name already addeed", package.name);
+							continue
+						}
+
+						if package.repository.r#type != "git" {
+							println!(
+								"package {} was not added: repository does not appear to be a git repository, so it cannot be a github repo, and filing issues on non-github repositories not supported (yet?)",
+								package.name
+							);
+							println!("filename: {filename}");
+							continue
+						}
+
+						if !package.repository.url.contains("github.com") {
+							println!(
+								"package {} was not added: repository does not appear to be a github repository, filing issues on non-github repositories not supported (yet?)",
+								package.name
+							);
+							println!("filename: {filename}");
+							continue
+						}
+
 						let res = db.add_package(&package);
-						if res {
-							println!("package {} was added", package.name);
-						} else {
-							println!("package {} was not added", package.name);
+						match res {
+							Ok(()) => { println!("package {} was added", package.name) }
+							Err(e) => { println!("package {} was not added: {e}", package.name) }
 						}
 					}
 					Err(err2) => { println!("package had errors!\nerr 1: {err}\nerr 2: {err2}") }
