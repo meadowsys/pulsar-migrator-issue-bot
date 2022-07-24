@@ -6,16 +6,13 @@ extern crate lazy_static;
 
 use clap::{ Parser, Subcommand };
 use dotenvy::dotenv;
-use hyper::body::Body;
-use hyper::body::HttpBody as _;
-use hyper::{ Method, Request };
 use std::env::var;
 use std::path::PathBuf;
 use tokio::fs;
 
 mod cli;
 mod db;
-mod http;
+mod github;
 
 use cli::Cli;
 use db::DatabaseThing;
