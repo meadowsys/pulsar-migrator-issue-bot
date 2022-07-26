@@ -7,6 +7,7 @@ I did also take my leisure to play around with libraries and things that I have 
 ## requirements
 
 - [rust], at least version 1.62.0
+- a UNIX or UNIX-like operating system, like macOS or Linux. This project is developed on a (Apple Silicon) Mac, with plans to deploy it onto a Linux server.
 
 ## build
 

@@ -35,6 +35,12 @@ async fn main() -> Result {
 		ReadPackageData { files } => {
 			cli::read_package_data(db, files).await?;
 		}
+		Start => {
+			// cli::start(db).await;
+			let gh = github::GithubClient::new(&token, db)?;
+			let url = gh.create_permission_request_issue("autumnblazey", "pulsar-migrator-issue-bot").await?;
+			println!("{url}");
+		}
 	}
 
 	Ok(())

@@ -29,23 +29,37 @@ struct DatabaseThingData {
 	pub packages: Vec<PackageState>
 }
 
-#[derive(Clone, Deserialize, Serialize)]
-enum PackageState {
-	New(NewPackage)
-}
+use package_state::*;
+pub use package_state::{ PackageNew, Repository };
+mod package_state {
+	use super::*;
+	#[derive(Clone, Deserialize, Serialize)]
+	pub enum PackageState {
+		New(PackageNew),
+		IssueFiled(PackageIssueFiled)
+	}
 
-#[derive(Clone, Deserialize, Serialize)]
-pub struct NewPackage {
-	pub name: String,
-	pub repository: PackageRepository,
-	pub downloads: u32,
-	pub stargazers_count: u32
-}
+	#[derive(Clone, Deserialize, Serialize)]
+	pub struct PackageNew {
+		pub name: String,
+		pub repository: Repository,
+		pub downloads: u32,
+		pub stargazers_count: u32
+	}
 
-#[derive(Clone, Deserialize, Serialize)]
-pub struct PackageRepository {
-	pub r#type: String,
-	pub url: String
+	#[derive(Clone, Deserialize, Serialize)]
+	pub struct Repository {
+		pub r#type: String,
+		pub url: String
+	}
+
+	#[derive(Clone, Deserialize, Serialize)]
+	pub struct PackageIssueFiled {
+		pub name: String,
+		pub repository: (String, String),
+		pub downloads: u32,
+		pub stargazers_count: u32
+	}
 }
 
 impl DatabaseThing {
@@ -83,7 +97,7 @@ impl DatabaseThing {
 		Ok(new)
 	}
 
-	pub fn add_package(&self, package: &NewPackage) -> Result<(), String> {
+	pub fn add_package(&self, package: &PackageNew) -> Result<(), String> {
 		let mut inner = self.lock_inner();
 		inner.data.packages.push(PackageState::New(package.clone()));
 
@@ -95,7 +109,8 @@ impl DatabaseThing {
 
 		for package in inner.data.packages.iter() {
 			let res = match package {
-				PackageState::New(NewPackage { name, .. }) => { name == package_name }
+				PackageState::New(PackageNew { name, .. }) => { name == package_name }
+				PackageState::IssueFiled(PackageIssueFiled { name, .. }) => { name == package_name }
 			};
 			if res { return true }
 		}

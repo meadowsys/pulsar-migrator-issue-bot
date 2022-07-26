@@ -16,7 +16,8 @@ pub struct Cli {
 pub enum Subcommands {
 	ReadPackageData {
 		files: Vec<String>
-	}
+	},
+	Start
 }
 
 pub async fn read_package_data(db: DatabaseThing, files: Vec<String>) -> Result {
@@ -37,7 +38,7 @@ pub async fn read_package_data(db: DatabaseThing, files: Vec<String>) -> Result 
 			}
 		};
 
-		let package = serde_json::from_str::<Vec<db::NewPackage>>(&file_str);
+		let package = serde_json::from_str::<Vec<db::PackageNew>>(&file_str);
 		match package {
 			Ok(packages) => {
 				for package in packages {
@@ -45,7 +46,7 @@ pub async fn read_package_data(db: DatabaseThing, files: Vec<String>) -> Result 
 				}
 			}
 			Err(err) => {
-				let package = serde_json::from_str::<db::NewPackage>(&file_str);
+				let package = serde_json::from_str::<db::PackageNew>(&file_str);
 				match package {
 					Ok(package) => {
 						if db.contains_package(&package.name) {
@@ -84,4 +85,8 @@ pub async fn read_package_data(db: DatabaseThing, files: Vec<String>) -> Result 
 	}
 
 	Ok(())
+}
+
+pub async fn start(db: DatabaseThing) {
+
 }
